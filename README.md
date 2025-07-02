@@ -9,8 +9,6 @@ La plateforme est conçue pour :
 - Gérer les incidents (tickets)
 - Fournir une traçabilité complète des actions
 
----
-
 ##  Technologies utilisées
 
 - **GLPI** 10.1.18 (version stable la plus récente)
