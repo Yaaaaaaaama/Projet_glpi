@@ -20,16 +20,18 @@ La plateforme est conçue pour :
 
 ##  Arborescence du dépôt
 
+```plaintext
 projet_glpi/
 ├── hosts.ini
 ├── vars.yml
 ├── roles/
-│ ├── geerlingguy.apache/
-│ ├── geerlingguy.mysql/
-│ ├── geerlingguy.php/
-│ ├── glpi/
+│   ├── geerlingguy.apache/
+│   ├── geerlingguy.mysql/
+│   ├── geerlingguy.php/
+│   └── glpi/
 ├── glpi-server.yml
 └── README.md
+```
 
 ##  Déploiement avec Ansible
 
