@@ -104,6 +104,40 @@
     group: www-data
     recurse: yes
 
+- name: Installer le paquet openssl (pour générer certificat SSL)
+  apt:
+    name: openssl
+    state: present
+    update_cache: yes
+
+- name: Créer un certificat SSL auto-signé pour Apache
+  command: >
+    openssl req -new -newkey rsa:2048 -days 365 -nodes -x509
+    -subj "/C=FR/ST=Paris/L=Paris/O=GLPI/CN={{ glpi_fqdn }}"
+    -keyout /etc/ssl/private/glpi-selfsigned.key
+    -out /etc/ssl/certs/glpi-selfsigned.crt
+  args:
+    creates: /etc/ssl/certs/glpi-selfsigned.crt
+
+- name: Configurer le site Apache GLPI en HTTPS
+  template:
+    src: glpi-ssl.conf.j2
+    dest: /etc/apache2/sites-available/glpi-ssl.conf
+  notify:
+    - Reload apache
+
+- name: Activer le site SSL GLPI
+  command: a2ensite glpi-ssl.conf
+  notify:
+    - Reload apache
+  changed_when: false
+
+- name: Désactiver le site par défaut
+  command: a2dissite 000-default.conf
+  notify:
+    - Reload apache
+  changed_when: false
+
 - name: Assurer que Apache est démarré
   ansible.builtin.service:
     name: apache2
