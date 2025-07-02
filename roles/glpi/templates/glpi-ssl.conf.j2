@@ -1,0 +1,25 @@
+<VirtualHost *:443>
+    ServerName {{ ansible_fqdn }}
+    DocumentRoot {{ glpi_dir }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/glpi-selfsigned.crt
+    SSLCertificateKeyFile /etc/ssl/private/glpi-selfsigned.key
+
+    <Directory {{ glpi_dir }}>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/glpi_error.log
+    CustomLog ${APACHE_LOG_DIR}/glpi_access.log combined
+
+    <FilesMatch \.php$>
+        SetHandler application/x-httpd-php
+    </FilesMatch>
+
+    <FilesMatch "(^\.|config_db\.php|\.ht)">
+        Require all denied
+    </FilesMatch>
+</VirtualHost>

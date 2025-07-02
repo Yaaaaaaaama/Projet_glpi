@@ -1,0 +1,24 @@
+# GLPI
+glpi_version: "10.0.18"
+glpi_url: "https://github.com/glpi-project/glpi/releases/download/{{ glpi_version }}/glpi-{{ glpi_version }}.tgz"
+glpi_dir: "/var/www/html/glpi"
+
+# Apache
+apache_listen_port: 80
+apache_create_vhosts: true
+apache_vhosts:
+  - servername: "glpi.local"
+    documentroot: "{{ glpi_dir }}"
+
+# MySQL
+mysql_root_password: "RootPass123!"
+mysql_databases:
+  - name: glpi
+mysql_users:
+  - name: glpiuser
+    host: "%"
+    password: "SuperSecurePassword123!"
+    priv: "glpi.*:ALL"
+
+# PHP
+php_version: "8.1"

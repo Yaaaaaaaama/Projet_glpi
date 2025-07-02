@@ -1,0 +1,71 @@
+---
+- name: Installer et configurer GLPI Agent sur Ubuntu
+  hosts: agent
+  become: yes
+
+  vars:
+    glpi_server_url: "https://192.168.1.44/front/inventory.php"
+    glpi_deb_url: "https://github.com/glpi-project/glpi-agent/releases/download/1.6.1/glpi-agent_1.6.1-1_all.deb"
+    glpi_deb_path: "/tmp/glpi-agent_1.6.1-1_all.deb"
+
+  tasks:
+    - name: Télécharger le paquet .deb de l'agent GLPI
+      ansible.builtin.get_url:
+        url: "{{ glpi_deb_url }}"
+        dest: "{{ glpi_deb_path }}"
+        mode: '0644'
+
+    - name: Installer le paquet .deb GLPI Agent
+      ansible.builtin.apt:
+        deb: "{{ glpi_deb_path }}"
+      register: install_result
+      failed_when: install_result.rc not in [0, 1] 
+
+    - name: Installer les dépendances manquantes si besoin
+      ansible.builtin.apt:
+        update_cache: yes
+        state: present
+        upgrade: dist
+      when: install_result.rc == 1
+
+    - name: Relancer l'installation du paquet .deb si besoin
+      ansible.builtin.apt:
+        deb: "{{ glpi_deb_path }}"
+      when: install_result.rc == 1
+
+    - name: Configurer le fichier agent.cfg
+      ansible.builtin.copy:
+        dest: /etc/glpi-agent/agent.cfg
+        content: |
+          server = {{ glpi_server_url }}
+          local = /tmp
+          tasks = collect,inventory,netdiscovery,netinventory,remoteinventory
+          scan-homedirs = 1
+          scan-profiles = 1
+          json = 1
+          force = 1
+          no-ssl-check = 1
+          httpd-ip = 127.0.0.1
+          httpd-port = 62354
+          httpd-trust = 127.0.0.0/8
+          logger = file
+          logfile = /var/log/glpi-agent.log
+          tag = dsfc
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Redémarrer et activer le service glpi-agent
+      ansible.builtin.systemd:
+        name: glpi-agent
+        state: restarted
+        enabled: yes
+
+    - name: Vérifier l'état du service glpi-agent
+      ansible.builtin.command:
+        cmd: systemctl status glpi-agent
+      register: status_glpi
+      ignore_errors: yes
+
+    - debug:
+        msg: "{{ status_glpi.stdout }}"

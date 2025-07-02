@@ -1,0 +1,111 @@
+- name: Installer les paquets PHP requis pour GLPI
+  apt:
+    name:
+      - php8.1
+      - libapache2-mod-php8.1
+      - php8.1-mysql
+      - php8.1-gd
+      - php8.1-curl
+      - php8.1-intl
+      - php8.1-mbstring
+      - php8.1-xml
+      - php8.1-ldap
+      - php8.1-zip
+      - php8.1-bcmath
+      - php8.1-imap
+    state: present
+    update_cache: yes
+  notify:
+    - Restart apache
+
+- name: Activer le module PHP 8.1 pour Apache
+  ansible.builtin.command:
+    cmd: a2enmod php8.1
+  notify:
+    - Restart apache
+  changed_when: false
+
+- name: Appliquer configuration PHP recommandée pour GLPI
+  template:
+    src: php.ini.j2
+    dest: /etc/php/{{ php_version }}/apache2/php.ini
+  notify:
+    - Restart apache
+
+- name: Activer les modules Apache nécessaires
+  ansible.builtin.command:
+    cmd: "a2enmod ssl rewrite headers"
+  notify:
+    - Restart apache
+  changed_when: false
+
+- name: Assurer que Mysql est démarré
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Créer la base de données GLPI
+  community.mysql.mysql_db:
+    name: glpi
+    state: present
+    encoding: utf8mb4
+    collation: utf8mb4_unicode_ci
+
+- name: Créer l'utilisateur MySQL pour GLPI
+  community.mysql.mysql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    priv: "{{ item.priv }}"
+    host: "{{ item.host }}"
+    state: present
+  loop: "{{ mysql_users }}"
+
+- name: Créer fichier .my.cnf pour accès root mysql
+  copy:
+    dest: /root/.my.cnf
+    content: |
+      [client]
+      user=root
+      password={{ mysql_root_password }}
+      socket=/var/run/mysqld/mysqld.sock
+    owner: root
+    group: root
+    mode: '0600'
+  become: yes
+
+- name: Sécuriser l’utilisateur root Mysql (changer mot de passe root)
+  become: yes
+  community.mysql.mysql_user:
+    name: root
+    host_all: yes
+    password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    check_implicit_admin: yes
+    state: present
+
+- name: Télécharger GLPI
+  get_url:
+    url: "{{ glpi_url }}"
+    dest: "/tmp/glpi-{{ glpi_version }}.tgz"
+    mode: '0644'
+
+- name: Extraire GLPI
+  unarchive:
+    src: "/tmp/glpi-{{ glpi_version }}.tgz"
+    dest: /var/www/html/
+    remote_src: yes
+    creates: "{{ glpi_dir }}"
+
+- name: Donner la propriété Apache sur le dossier GLPI
+  file:
+    path: "{{ glpi_dir }}"
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: Assurer que Apache est démarré
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: yes
