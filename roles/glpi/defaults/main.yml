@@ -2,11 +2,11 @@ glpi_version: "10.0.18"
 glpi_url: "https://github.com/glpi-project/glpi/releases/download/{{ glpi_version }}/glpi-{{ glpi_version }}.tgz"
 glpi_dir: "/var/www/html/glpi"
 
-mysql_root_password: "RootPass123!"
+mysql_root_password: "{{ mysql_root_password }}"
 mysql_databases:
   - name: glpi
 mysql_users:
   - name: glpiuser
     host: "%"
-    password: "SuperSecurePassword123!"
+    password: "{{ glpi_db_password }}"
     priv: "glpi.*:ALL"

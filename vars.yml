@@ -11,13 +11,13 @@ apache_vhosts:
     documentroot: "{{ glpi_dir }}"
 
 # MySQL
-mysql_root_password: "RootPass123!"
+mysql_root_password: "{{ mysql_root_password }}"
 mysql_databases:
   - name: glpi
 mysql_users:
   - name: glpiuser
     host: "%"
-    password: "SuperSecurePassword123!"
+    password: "{{ glpi_db_password }}"
     priv: "glpi.*:ALL"
 
 # PHP

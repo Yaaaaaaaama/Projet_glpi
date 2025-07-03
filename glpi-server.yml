@@ -5,6 +5,7 @@
 
   vars_files:
     - vars.yml
+    - vault.yml
 
   roles:
     - role: geerlingguy.apache
